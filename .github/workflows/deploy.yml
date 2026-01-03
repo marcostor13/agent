@@ -31,6 +31,13 @@ jobs:
           push: true
           tags: marcostor13/agent:latest
 
+      - name: Network Diagnostics
+        run: |
+          echo "Pinging host..."
+          ping -c 1 marcostorresalarcon.com || echo "Ping failed"
+          echo "Testing SSH port connectivity..."
+          nc -zv marcostorresalarcon.com 22
+
       - name: Deploy to Ubuntu Server via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
