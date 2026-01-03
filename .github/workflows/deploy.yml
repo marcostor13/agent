@@ -38,6 +38,7 @@ jobs:
           username: marcostor13
           password: ${{ secrets.SERVER_PASSWORD }}
           port: 22
+          debug: true
           script: |
             cd /home/marcostor13
             ./deploy.sh marcostor13/agent agent 3028 .env_agent
