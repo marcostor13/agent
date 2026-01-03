@@ -1,62 +1,43 @@
-# Nombre del workflow que aparecerá en la pestaña "Actions" de GitHub
-name: Deploy Backend to EC2
+# Nombre del workflow
+name: Deploy Backend to Ubuntu Server
 
 # 1. DISPARADOR (TRIGGER)
-# Esto le dice a GitHub cuándo debe ejecutar este archivo.
 on:
   push:
     branches:
-      - main # Se activa solo en push (o merge) a la rama 'main'
+      - main
 
 jobs:
-  # Definimos un solo "trabajo" llamado 'deploy'
   deploy:
-    # El trabajo se ejecutará en un servidor virtual de Ubuntu
     runs-on: ubuntu-latest
 
     steps:
-      # 2. OBTENER EL CÓDIGO
-      # Descarga el código de tu repositorio en el servidor de GitHub
       - name: Check out code
         uses: actions/checkout@v4
 
-      # 3. INICIAR SESIÓN EN DOCKER HUB
-      # Usa los secrets que configuraste
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 4. CONFIGURAR DOCKER BUILDX
-      # Un paso necesario para la acción de build-push
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 5. CONSTRUIR Y EMPUJAR LA IMAGEN
-      # Esto reemplaza los comandos 'docker build', 'docker tag' y 'docker push'
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: . # Usa el Dockerfile en la raíz del proyecto
-          push: true # Empuja la imagen al repositorio
-          tags: marcostor13/agent:latest # El tag que usará
+          context: .
+          push: true
+          tags: marcostor13/agent:latest
 
-      # 6. CONECTARSE AL EC2 Y DESPLEGAR
-      # Esto reemplaza tu sección "Pasos Remotos (SSH & Deploy)"
-      - name: Deploy to EC2 via SSH
+      - name: Deploy to Ubuntu Server via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: marcostorresalarcon.com # Tu host de EC2
-          username: marcostor13 # El usuario SSH
-          password: ${{ secrets.SERVER_PASSWORD }} # El secret con tu llave .pem
-          port: 22 # El puerto SSH (default es 22)
-
-          # El comando a ejecutar en el servidor EC2
+          host: marcostorresalarcon.com
+          username: marcostor13
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: 22
           script: |
-            # Nos movemos al directorio del proyecto en el servidor
             cd /home/marcostor13
-
-            # Ejecutamos el script remoto PASÁNDOLE los argumentos
-            # que tu script de PowerShell original le pasaba
             ./deploy.sh marcostor13/agent agent 3028 .env_agent
