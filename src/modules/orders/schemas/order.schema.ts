@@ -1,0 +1,43 @@
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document, Types } from 'mongoose';
+
+@Schema({ timestamps: true })
+export class Order extends Document {
+    @Prop({ required: true })
+    phoneNumber: string;
+
+    @Prop({ required: true })
+    customerName: string;
+
+    @Prop({ required: true })
+    dni: string;
+
+    @Prop({ required: true })
+    address: string;
+
+    @Prop([{
+        productId: { type: Types.ObjectId, ref: 'Product' },
+        quantity: Number,
+        size: String,
+        color: String,
+        price: Number,
+    }])
+    items: Array<{
+        productId: Types.ObjectId;
+        quantity: number;
+        size: string;
+        color: string;
+        price: number;
+    }>;
+
+    @Prop({ required: true })
+    total: number;
+
+    @Prop({ default: 'pending', enum: ['pending', 'paid', 'delivered', 'cancelled'] })
+    status: string;
+
+    @Prop()
+    paymentLink?: string;
+}
+
+export const OrderSchema = SchemaFactory.createForClass(Order);

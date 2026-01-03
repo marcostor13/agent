@@ -1,0 +1,146 @@
+{
+	"info": {
+		"_postman_id": "7a8d9e2b-1c3d-4e5f-8g7h-9i0j1k2l3m4n",
+		"name": "AI Sales Agent - Zimnol Perú",
+		"description": "Colección de APIs para el Agente de Ventas IA con integración de WhatsApp, Catálogo RAG y gestión de pedidos.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "General",
+			"item": [
+				{
+					"name": "Root Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						},
+						"description": "Verifica que el servidor principal esté respondiendo."
+					},
+					"response": []
+				},
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Verifica el estado de salud del servidor y el tamaño del catálogo de productos."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "WhatsApp Webhook",
+			"item": [
+				{
+					"name": "Verify Webhook (GET)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/whatsapp/webhook?hub.mode=subscribe&hub.verify_token={{verifyToken}}&hub.challenge=CHALLENGE_ACCEPTED",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"whatsapp",
+								"webhook"
+							],
+							"query": [
+								{
+									"key": "hub.mode",
+									"value": "subscribe"
+								},
+								{
+									"key": "hub.verify_token",
+									"value": "{{verifyToken}}"
+								},
+								{
+									"key": "hub.challenge",
+									"value": "CHALLENGE_ACCEPTED"
+								}
+							]
+						},
+						"description": "Simula el proceso de verificación de Webhook de Facebook/WhatsApp."
+					},
+					"response": []
+				},
+				{
+					"name": "Simulate Message (POST)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [\n    {\n      \"id\": \"WHATSAPP_BUSINESS_ACCOUNT_ID\",\n      \"changes\": [\n        {\n          \"value\": {\n            \"messaging_product\": \"whatsapp\",\n            \"metadata\": {\n              \"display_phone_number\": \"123456789\",\n              \"phone_number_id\": \"PHONE_NUMBER_ID\"\n            },\n            \"contacts\": [\n              {\n                \"profile\": {\n                  \"name\": \"Cliente de Prueba\"\n                },\n                \"wa_id\": \"51999888777\"\n              }\n            ],\n            \"messages\": [\n              {\n                \"from\": \"51999888777\",\n                \"id\": \"wamid.HBgLNTExOTkzMTk0MTkyFQIAERgSQ0ZBRkUzODZBODZDRkRCNzRBAA==\",\n                \"timestamp\": \"1670605920\",\n                \"text\": {\n                  \"body\": \"Hola, qué vestidos tienes en oferta?\"\n                },\n                \"type\": \"text\"\n              }\n            ]\n          },\n          \"field\": \"messages\"\n        }\n      ]\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/whatsapp/webhook",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"whatsapp",
+								"webhook"
+							]
+						},
+						"description": "Simula la recepción de un mensaje entrante de un cliente vía WhatsApp."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "verifyToken",
+			"value": "YOUR_WHATSAPP_VERIFY_TOKEN",
+			"type": "string"
+		}
+	]
+}
