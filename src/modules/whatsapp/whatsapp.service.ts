@@ -37,7 +37,8 @@ export class WhatsappService {
             );
             return response.data;
         } catch (error) {
-            this.logger.error(`Error sending WhatsApp message: ${error.response?.data || error.message}`);
+            const errorData = error.response?.data;
+            this.logger.error(`Error sending WhatsApp message: ${errorData ? JSON.stringify(errorData) : error.message}`);
             throw error;
         }
     }
