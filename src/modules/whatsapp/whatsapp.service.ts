@@ -43,6 +43,37 @@ export class WhatsappService {
         }
     }
 
-    // TODO: Implement sendImageMessage, sendTemplateMessage, etc.
+    async sendImageMessage(to: string, imageUrl: string, caption?: string) {
+        const url = `https://graph.facebook.com/${this.apiVersion}/${this.phoneNumberId}/messages`;
+
+        try {
+            const response = await axios.post(
+                url,
+                {
+                    messaging_product: 'whatsapp',
+                    recipient_type: 'individual',
+                    to: to,
+                    type: 'image',
+                    image: {
+                        link: imageUrl,
+                        caption: caption
+                    },
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${this.accessToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                },
+            );
+            return response.data;
+        } catch (error) {
+            const errorData = error.response?.data;
+            this.logger.error(`Error sending WhatsApp image: ${errorData ? JSON.stringify(errorData) : error.message}`);
+            throw error;
+        }
+    }
+
+    // TODO: Implement sendTemplateMessage, etc.
 
 }

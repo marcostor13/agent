@@ -4,6 +4,7 @@ import { WhatsappService } from './whatsapp.service';
 import { WhatsAppWebhookDTO } from './dto/whatsapp-webhook.dto';
 import { AiService } from '../ai/ai.service';
 import { OrdersService } from '../orders/orders.service';
+import { UsersService } from '../users/users.service';
 import { HumanMessage, AIMessage } from '@langchain/core/messages';
 
 @Controller('whatsapp')
@@ -15,6 +16,7 @@ export class WhatsappController {
         private readonly configService: ConfigService,
         private readonly aiService: AiService,
         private readonly ordersService: OrdersService,
+        private readonly usersService: UsersService,
     ) { }
 
     @Get('webhook')
@@ -52,13 +54,20 @@ export class WhatsappController {
             this.logger.log(`Message from ${contactName} (${from}): ${text}`);
 
             try {
+                // Check if number is authorized
+                const auth = await this.usersService.getAuthorization(from);
+                if (!auth) {
+                    this.logger.warn(`Unauthorized message from ${from}`);
+                    return { status: 'unauthorized' };
+                }
+
                 // Load history from MongoDB
                 const rawHistory = await this.ordersService.getChatHistory(from);
                 const history = rawHistory.map(m =>
                     m.type === 'human' ? new HumanMessage(m.content) : new AIMessage(m.content)
                 );
 
-                const aiResponse = await this.aiService.processMessage(`${text} (Usuario: ${from})`, history);
+                const aiResponse = await this.aiService.processMessage(`${text} (Usuario: ${from})`, history, auth.flowId);
 
                 // Save history back to MongoDB
                 await this.ordersService.saveChatHistory(from, 'human', text);

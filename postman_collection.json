@@ -45,6 +45,58 @@
 			]
 		},
 		{
+			"name": "User Authorization",
+			"item": [
+				{
+					"name": "Authorize Number",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phoneNumber\": \"51975760418\",\n    \"flowId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/authorize",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"authorize"
+							]
+						},
+						"description": "Autoriza un número de teléfono y le asigna un flujo (1 para Zimnol Perú)."
+					},
+					"response": []
+				},
+				{
+					"name": "List Authorized Numbers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/authorized",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"authorized"
+							]
+						},
+						"description": "Lista todos los números autorizados actualmente."
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "WhatsApp Webhook",
 			"item": [
 				{
