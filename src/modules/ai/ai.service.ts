@@ -136,13 +136,23 @@ export class AiService implements OnModuleInit {
                     phoneNumber: z.string().describe('El número de teléfono del cliente'),
                 }),
                 func: async ({ phoneNumber }) => {
-                    const baseUrl = this.configService.get<string>('APP_URL') || 'http://marcostorresalarcon.com:3028';
-                    const images = ['foto1.jpg', 'foto2.jpg', 'foto3.jpg', 'foto4.jpg', 'foto5.jpg', 'foto6.jpg', 'foto7.jpg', 'foto8.jpg', 'foto9.jpg', 'foto10.jpg'];
-                    for (const img of images) {
+                    const images = [
+                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z1.jpeg',
+                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z2.jpeg',
+                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z3.jpeg',
+                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z4.jpeg',
+                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z5.jpeg',
+                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z6.jpeg',
+                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z7.jpeg',
+                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z8.jpeg',
+                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z9.jpeg',
+                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z10.jpeg'
+                    ];
+                    for (const imageUrl of images) {
                         try {
-                            await this.whatsappService.sendImageMessage(phoneNumber, `${baseUrl}/public/images/${img}`);
+                            await this.whatsappService.sendImageMessage(phoneNumber, imageUrl);
                         } catch (e) {
-                            this.logger.error(`Error sending welcome image ${img}: ${e.message}`);
+                            this.logger.error(`Error sending welcome image ${imageUrl}: ${e.message}`);
                         }
                     }
                     return 'Imágenes de bienvenida enviadas.';
