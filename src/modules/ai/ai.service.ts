@@ -148,14 +148,21 @@ export class AiService implements OnModuleInit {
                         'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z9.jpeg',
                         'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z10.jpeg'
                     ];
-                    for (const imageUrl of images) {
-                        try {
-                            await this.whatsappService.sendImageMessage(phoneNumber, imageUrl);
-                        } catch (e) {
-                            this.logger.error(`Error sending welcome image ${imageUrl}: ${e.message}`);
+
+                    // Enviamos las imágenes con un pequeño retraso para asegurar que lleguen después del texto
+                    setTimeout(async () => {
+                        for (const imageUrl of images) {
+                            try {
+                                await this.whatsappService.sendImageMessage(phoneNumber, imageUrl);
+                                // Un pequeño respiro entre imágenes (500ms)
+                                await new Promise(resolve => setTimeout(resolve, 500));
+                            } catch (e) {
+                                this.logger.error(`Error sending welcome image ${imageUrl}: ${e.message}`);
+                            }
                         }
-                    }
-                    return 'Imágenes de bienvenida enviadas.';
+                    }, 2500); // 2.5 segundos de espera aproximada
+
+                    return 'Catálogo de imágenes enviado (se enviarán en unos momentos después del saludo).';
                 },
             }),
         ];
