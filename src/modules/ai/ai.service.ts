@@ -60,7 +60,7 @@ export class AiService implements OnModuleInit {
                     }),
                     func: async (input) => {
                         try {
-                            const order = await this.ordersService.createDirectOrder(input.customerPhone, whatsappConfigId, input, this.productsService);
+                            const order: any = await this.ordersService.createDirectOrder(input.customerPhone, whatsappConfigId, input, this.productsService);
                             return `Pedido creado con éxito. ID: ${order._id}. Total: S/ ${order.total}.`;
                         } catch (error) {
                             return `Error al crear el pedido: ${error.message}`;

@@ -54,7 +54,7 @@ export class OrdersService {
     }
 
     async createDirectOrder(phoneNumber: string, whatsappConfigId: string, data: any, productsService: any) {
-        const itemsWithPrices = [];
+        const itemsWithPrices: any[] = [];
         let total = 0;
 
         for (const item of data.items) {

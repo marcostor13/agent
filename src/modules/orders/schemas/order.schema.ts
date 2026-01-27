@@ -12,6 +12,9 @@ export class Order extends Document {
     @Prop({ required: true })
     customerName: string;
 
+    @Prop({ required: true })
+    customerPhone: string;
+
     @Prop()
     dni?: string;
 
