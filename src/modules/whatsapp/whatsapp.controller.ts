@@ -59,14 +59,17 @@ export class WhatsappController {
 
             try {
                 // Fetch WhatsApp Configuration
+                this.logger.debug(`Looking for config with phoneNumberId: ${phoneNumberId}`);
                 const config = await this.configService.findByPhoneNumberId(phoneNumberId);
+                this.logger.log(`Found config: ${config.name} (Agent Type: ${config.agentType})`);
 
                 // Check if number is authorized
                 const auth = await this.usersService.getAuthorization(from);
                 if (!auth) {
-                    this.logger.warn(`Unauthorized message from ${from}`);
+                    this.logger.warn(`Unauthorized message from ${from}. Make sure to authorize it via /users/authorize`);
                     return { status: 'unauthorized' };
                 }
+                this.logger.log(`Number ${from} is authorized (Flow ID: ${auth.flowId})`);
 
                 // Load history from MongoDB
                 const rawHistory = await this.ordersService.getChatHistory(from, config._id.toString());
@@ -74,19 +77,23 @@ export class WhatsappController {
                     m.type === 'human' ? new HumanMessage(m.content) : new AIMessage(m.content)
                 );
 
+                this.logger.log(`Processing message with AI for ${from}...`);
                 const aiResponse = await this.aiService.processMessage(
                     `${text} (Usuario: ${from})`,
                     history,
                     config,
                 );
+                this.logger.log(`AI Response generated for ${from}: ${aiResponse.substring(0, 50)}...`);
 
                 // Save history back to MongoDB
                 await this.ordersService.saveChatHistory(from, 'human', text, config._id.toString());
                 await this.ordersService.saveChatHistory(from, 'ai', aiResponse, config._id.toString());
 
+                this.logger.log(`Sending WhatsApp response to ${from}...`);
                 await this.whatsappService.sendTextMessage(from, aiResponse, config);
+                this.logger.log(`Message sent successfully to ${from}`);
             } catch (error) {
-                this.logger.error(`Failed to handle message from ${from}: ${error.message}`);
+                this.logger.error(`Failed to handle message from ${from}: ${error.message}`, error.stack);
             }
         }
 
