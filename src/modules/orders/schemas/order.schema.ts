@@ -12,11 +12,14 @@ export class Order extends Document {
     @Prop({ required: true })
     customerName: string;
 
-    @Prop({ required: true })
-    dni: string;
+    @Prop()
+    dni?: string;
 
     @Prop({ required: true })
     address: string;
+
+    @Prop({ required: true })
+    district: string;
 
     @Prop([{
         productId: { type: Types.ObjectId, ref: 'Product' },

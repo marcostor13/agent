@@ -54,7 +54,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Tienda Demo\",\n    \"phoneNumber\": \"51900111222\",\n    \"phoneNumberId\": \"1234567890\",\n    \"verifyToken\": \"tokentest\",\n    \"accessToken\": \"EAAB...\",\n    \"apiVersion\": \"v17.0\",\n    \"systemPrompt\": \"Eres un asistente...\",\n    \"welcomeMessage\": \"Hola! Bienvenido...\",\n    \"welcomeImages\": []\n}",
+							"raw": "{\n    \"name\": \"Tienda Demo\",\n    \"phoneNumber\": \"51900111222\",\n    \"phoneNumberId\": \"1234567890\",\n    \"verifyToken\": \"tokentest\",\n    \"accessToken\": \"EAAB...\",\n    \"apiVersion\": \"v17.0\",\n    \"systemPrompt\": \"Eres un asistente...\",\n    \"welcomeMessage\": \"Hola! Bienvenido...\",\n    \"welcomeImages\": [],\n    \"agentType\": 1\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -118,7 +118,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Tienda Demo Updated\",\n    \"systemPrompt\": \"Eres un asistente experto...\"\n}",
+							"raw": "{\n    \"name\": \"Tienda Demo Updated\",\n    \"systemPrompt\": \"Eres un asistente experto...\",\n    \"agentType\": 2\n}",
 							"options": {
 								"raw": {
 									"language": "json"

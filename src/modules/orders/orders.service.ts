@@ -53,6 +53,38 @@ export class OrdersService {
         return order;
     }
 
+    async createDirectOrder(phoneNumber: string, whatsappConfigId: string, data: any, productsService: any) {
+        const itemsWithPrices = [];
+        let total = 0;
+
+        for (const item of data.items) {
+            const product = await productsService.getProductById(item.productId);
+            if (!product) throw new Error(`Product not found: ${item.productId}`);
+
+            itemsWithPrices.push({
+                productId: item.productId,
+                quantity: item.quantity,
+                price: product.price,
+                name: product.name,
+            });
+            total += product.price * item.quantity;
+        }
+
+        const order = await this.orderModel.create({
+            phoneNumber,
+            whatsappConfigId,
+            customerName: data.customerName,
+            customerPhone: data.customerPhone,
+            address: data.deliveryAddress,
+            district: data.district,
+            items: itemsWithPrices,
+            total,
+            status: 'pending',
+        });
+
+        return order;
+    }
+
     async generatePaymentLink(orderId: string): Promise<string> {
         // Mock payment link generation
         // In a real scenario, this would call an API like Culqi or MercadoPago

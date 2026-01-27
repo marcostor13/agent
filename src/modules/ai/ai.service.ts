@@ -42,6 +42,34 @@ export class AiService implements OnModuleInit {
     private getTools(config: WhatsAppConfig) {
         const whatsappConfigId = config._id.toString();
 
+        if (config.agentType === 2) {
+            return [
+                new DynamicStructuredTool({
+                    name: 'create_order',
+                    description: 'Envía un pedido de delivery al sistema de cocina de Caldos Doris',
+                    schema: z.object({
+                        type: z.enum(['delivery']).describe('Tipo de orden, siempre es delivery'),
+                        items: z.array(z.object({
+                            productId: z.string().describe('El ID del producto según la tabla del menú'),
+                            quantity: z.number().int().describe('Cantidad de platos'),
+                        })),
+                        customerName: z.string().describe('Nombre completo del cliente'),
+                        customerPhone: z.string().describe('Teléfono del cliente'),
+                        deliveryAddress: z.string().describe('Dirección de entrega (Calle y número)'),
+                        district: z.string().describe('Distrito de la ciudad (ej: San Isidro, Miraflores)'),
+                    }),
+                    func: async (input) => {
+                        try {
+                            const order = await this.ordersService.createDirectOrder(input.customerPhone, whatsappConfigId, input, this.productsService);
+                            return `Pedido creado con éxito. ID: ${order._id}. Total: S/ ${order.total}.`;
+                        } catch (error) {
+                            return `Error al crear el pedido: ${error.message}`;
+                        }
+                    },
+                }),
+            ];
+        }
+
         return [
             new DynamicStructuredTool({
                 name: 'consultar_catalogo',

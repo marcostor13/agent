@@ -32,6 +32,9 @@ export class WhatsAppConfig extends Document {
 
     @Prop({ default: true })
     isActive: boolean;
+
+    @Prop({ default: 1 })
+    agentType: number;
 }
 
 export const WhatsAppConfigSchema = SchemaFactory.createForClass(WhatsAppConfig);

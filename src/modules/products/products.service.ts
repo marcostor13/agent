@@ -60,4 +60,8 @@ export class ProductsService implements OnModuleInit {
         const query = whatsappConfigId ? { whatsappConfigId } : {};
         return this.productModel.find(query).exec();
     }
+
+    async getProductById(productId: string) {
+        return this.productModel.findById(productId).exec();
+    }
 }
