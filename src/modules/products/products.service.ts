@@ -27,10 +27,12 @@ export class ProductsService implements OnModuleInit {
         });
     }
 
-    async searchProducts(query: string, limit = 3) {
+    async searchProducts(query: string, whatsappConfigId: string, limit = 3) {
         try {
-            this.logger.log(`Searching products for: ${query}`);
-            const results = await this.vectorStore.similaritySearch(query, limit);
+            this.logger.log(`Searching products for account ${whatsappConfigId}: ${query}`);
+            const results = await this.vectorStore.similaritySearch(query, limit, {
+                whatsappConfigId: whatsappConfigId
+            });
             return results.map(doc => doc.metadata);
         } catch (error) {
             this.logger.error(`Error searching products: ${error.message}`);
@@ -38,23 +40,24 @@ export class ProductsService implements OnModuleInit {
         }
     }
 
-    async seedCatalog(products: any[]) {
+    async seedCatalog(products: any[], whatsappConfigId: string) {
         for (const prod of products) {
-            const exists = await this.productModel.findOne({ name: prod.name });
+            const exists = await this.productModel.findOne({ name: prod.name, whatsappConfigId });
             if (!exists) {
-                const product = new this.productModel(prod);
+                const product = new this.productModel({ ...prod, whatsappConfigId });
                 // Generate embedding for description
                 if (prod.description) {
                     const embedding = await this.embeddings.embedQuery(prod.description);
                     product.set('embedding', embedding);
                 }
                 await product.save();
-                this.logger.log(`Product seeded: ${prod.name}`);
+                this.logger.log(`Product seeded for ${whatsappConfigId}: ${prod.name}`);
             }
         }
     }
 
-    async getAllProducts() {
-        return this.productModel.find().exec();
+    async getAllProducts(whatsappConfigId?: string) {
+        const query = whatsappConfigId ? { whatsappConfigId } : {};
+        return this.productModel.find(query).exec();
     }
 }

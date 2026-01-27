@@ -15,40 +15,41 @@ export class OrdersService {
         @InjectModel(ChatHistory.name) private historyModel: Model<ChatHistory>,
     ) { }
 
-    async getOrCreateCart(phoneNumber: string): Promise<Cart> {
-        let cart = await this.cartModel.findOne({ phoneNumber });
+    async getOrCreateCart(phoneNumber: string, whatsappConfigId: string): Promise<Cart> {
+        let cart = await this.cartModel.findOne({ phoneNumber, whatsappConfigId });
         if (!cart) {
-            cart = await this.cartModel.create({ phoneNumber, items: [], total: 0 });
+            cart = await this.cartModel.create({ phoneNumber, whatsappConfigId, items: [], total: 0 });
         }
         return cart;
     }
 
-    async addItemToCart(phoneNumber: string, item: any) {
-        const cart = await this.getOrCreateCart(phoneNumber);
+    async addItemToCart(phoneNumber: string, whatsappConfigId: string, item: any) {
+        const cart = await this.getOrCreateCart(phoneNumber, whatsappConfigId);
         cart.items.push(item);
         cart.total = cart.items.reduce((acc, i) => acc + (i.price * i.quantity), 0);
         return cart.save();
     }
 
-    async clearCart(phoneNumber: string) {
-        return this.cartModel.findOneAndUpdate({ phoneNumber }, { items: [], total: 0 }, { new: true });
+    async clearCart(phoneNumber: string, whatsappConfigId: string) {
+        return this.cartModel.findOneAndUpdate({ phoneNumber, whatsappConfigId }, { items: [], total: 0 }, { new: true });
     }
 
-    async createOrder(phoneNumber: string, customerData: any) {
-        const cart = await this.cartModel.findOne({ phoneNumber });
+    async createOrder(phoneNumber: string, whatsappConfigId: string, customerData: any) {
+        const cart = await this.cartModel.findOne({ phoneNumber, whatsappConfigId });
         if (!cart || cart.items.length === 0) {
             throw new Error('Cart is empty');
         }
 
         const order = await this.orderModel.create({
             phoneNumber,
+            whatsappConfigId,
             ...customerData,
             items: cart.items,
             total: cart.total,
             status: 'pending',
         });
 
-        await this.clearCart(phoneNumber);
+        await this.clearCart(phoneNumber, whatsappConfigId);
         return order;
     }
 
@@ -60,8 +61,8 @@ export class OrdersService {
         return paymentLink;
     }
 
-    async getCartSummary(phoneNumber: string): Promise<string> {
-        const cart = await this.cartModel.findOne({ phoneNumber });
+    async getCartSummary(phoneNumber: string, whatsappConfigId: string): Promise<string> {
+        const cart = await this.cartModel.findOne({ phoneNumber, whatsappConfigId });
         if (!cart || cart.items.length === 0) return 'Tu carrito está vacío.';
 
         let summary = 'Resumen de tu carrito:\n';
@@ -72,15 +73,15 @@ export class OrdersService {
         return summary;
     }
 
-    async getChatHistory(phoneNumber: string): Promise<any[]> {
-        const history = await this.historyModel.findOne({ phoneNumber });
+    async getChatHistory(phoneNumber: string, whatsappConfigId: string): Promise<any[]> {
+        const history = await this.historyModel.findOne({ phoneNumber, whatsappConfigId });
         return history ? history.messages.map(m => ({ type: m.role, content: m.content })) : [];
     }
 
-    async saveChatHistory(phoneNumber: string, type: 'human' | 'ai', content: string) {
-        let history = await this.historyModel.findOne({ phoneNumber });
+    async saveChatHistory(phoneNumber: string, type: 'human' | 'ai', content: string, whatsappConfigId: string) {
+        let history = await this.historyModel.findOne({ phoneNumber, whatsappConfigId });
         if (!history) {
-            history = new this.historyModel({ phoneNumber, messages: [] });
+            history = new this.historyModel({ phoneNumber, whatsappConfigId, messages: [] });
         }
         history.messages.push({ role: type, content, timestamp: new Date() });
         // Keep last 20 messages

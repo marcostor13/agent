@@ -29,6 +29,9 @@ export class Product extends Document {
 
     @Prop({ type: [Number], index: '2dsphere', select: false }) // Simplified for now, Mongo Atlas Search handles vectors differently
     embedding: number[];
+
+    @Prop({ type: 'ObjectId', ref: 'WhatsAppConfig', required: true, index: true })
+    whatsappConfigId: any;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

@@ -5,10 +5,13 @@ import { ProductsService } from './products.service';
 import { SeedService } from './seed.service';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { ConfigService } from '@nestjs/config';
+import { WhatsappModule } from '../whatsapp/whatsapp.module';
+import { forwardRef } from '@nestjs/common';
 
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
+        forwardRef(() => WhatsappModule),
     ],
     providers: [
         ProductsService,

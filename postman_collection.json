@@ -1,8 +1,8 @@
 {
 	"info": {
 		"_postman_id": "7a8d9e2b-1c3d-4e5f-8g7h-9i0j1k2l3m4n",
-		"name": "AI Sales Agent - Zimnol Perú",
-		"description": "Colección de APIs para el Agente de Ventas IA con integración de WhatsApp, Catálogo RAG y gestión de pedidos.",
+		"name": "AI Sales Agent - Multi-Account",
+		"description": "Colección de APIs para el Agente de Ventas IA con soporte multi-cuenta, integración de WhatsApp, Catálogo RAG y gestión de pedidos.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -45,6 +45,122 @@
 			]
 		},
 		{
+			"name": "WhatsApp Configuration",
+			"item": [
+				{
+					"name": "Create Config",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Tienda Demo\",\n    \"phoneNumber\": \"51900111222\",\n    \"phoneNumberId\": \"1234567890\",\n    \"verifyToken\": \"tokentest\",\n    \"accessToken\": \"EAAB...\",\n    \"apiVersion\": \"v17.0\",\n    \"systemPrompt\": \"Eres un asistente...\",\n    \"welcomeMessage\": \"Hola! Bienvenido...\",\n    \"welcomeImages\": []\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/whatsapp-configs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"whatsapp-configs"
+							]
+						},
+						"description": "Crea una nueva configuración para una cuenta de WhatsApp."
+					},
+					"response": []
+				},
+				{
+					"name": "List Configs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/whatsapp-configs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"whatsapp-configs"
+							]
+						},
+						"description": "Lista todas las configuraciones de WhatsApp activas."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Config by Phone ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/whatsapp-configs/1234567890",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"whatsapp-configs",
+								"1234567890"
+							]
+						},
+						"description": "Obtiene una configuración específica por su Phone Number ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Config",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Tienda Demo Updated\",\n    \"systemPrompt\": \"Eres un asistente experto...\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/whatsapp-configs/{{configMongoId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"whatsapp-configs",
+								"{{configMongoId}}"
+							]
+						},
+						"description": "Actualiza una configuración existente usando su ID de MongoDB."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Config",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/whatsapp-configs/{{configMongoId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"whatsapp-configs",
+								"{{configMongoId}}"
+							]
+						},
+						"description": "Elimina una configuración existente."
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "User Authorization",
 			"item": [
 				{
@@ -71,7 +187,7 @@
 								"authorize"
 							]
 						},
-						"description": "Autoriza un número de teléfono y le asigna un flujo (1 para Zimnol Perú)."
+						"description": "Autoriza un número de teléfono y le asigna un flujo."
 					},
 					"response": []
 				},
@@ -128,7 +244,7 @@
 								}
 							]
 						},
-						"description": "Simula el proceso de verificación de Webhook de Facebook/WhatsApp."
+						"description": "Simula el proceso de verificación de Webhook. El sistema verificará el token contra todas las configuraciones registradas."
 					},
 					"response": []
 				},
@@ -139,7 +255,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [\n    {\n      \"id\": \"WHATSAPP_BUSINESS_ACCOUNT_ID\",\n      \"changes\": [\n        {\n          \"value\": {\n            \"messaging_product\": \"whatsapp\",\n            \"metadata\": {\n              \"display_phone_number\": \"123456789\",\n              \"phone_number_id\": \"PHONE_NUMBER_ID\"\n            },\n            \"contacts\": [\n              {\n                \"profile\": {\n                  \"name\": \"Cliente de Prueba\"\n                },\n                \"wa_id\": \"51999888777\"\n              }\n            ],\n            \"messages\": [\n              {\n                \"from\": \"51999888777\",\n                \"id\": \"wamid.HBgLNTExOTkzMTk0MTkyFQIAERgSQ0ZBRkUzODZBODZDRkRCNzRBAA==\",\n                \"timestamp\": \"1670605920\",\n                \"text\": {\n                  \"body\": \"Hola, qué vestidos tienes en oferta?\"\n                },\n                \"type\": \"text\"\n              }\n            ]\n          },\n          \"field\": \"messages\"\n        }\n      ]\n    }\n  ]\n}",
+							"raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [\n    {\n      \"id\": \"{{wabaId}}\",\n      \"changes\": [\n        {\n          \"value\": {\n            \"messaging_product\": \"whatsapp\",\n            \"metadata\": {\n              \"display_phone_number\": \"{{accountPhoneNumber}}\",\n              \"phone_number_id\": \"{{phoneNumberId}}\"\n            },\n            \"contacts\": [\n              {\n                \"profile\": {\n                  \"name\": \"Cliente de Prueba\"\n                },\n                \"wa_id\": \"51999888777\"\n              }\n            ],\n            \"messages\": [\n              {\n                \"from\": \"51999888777\",\n                \"id\": \"wamid.{{randomId}}\",\n                \"timestamp\": \"1670605920\",\n                \"text\": {\n                  \"body\": \"Hola, qué productos tienes?\"\n                },\n                \"type\": \"text\"\n              }\n            ]\n          },\n          \"field\": \"messages\"\n        }\n      ]\n    }\n  ]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -156,31 +272,11 @@
 								"webhook"
 							]
 						},
-						"description": "Simula la recepción de un mensaje entrante de un cliente vía WhatsApp."
+						"description": "Simula la recepción de un mensaje. Asegúrate de que el phoneNumberId coincida con una configuración registrada."
 					},
 					"response": []
 				}
 			]
-		}
-	],
-	"event": [
-		{
-			"listen": "prerequest",
-			"script": {
-				"type": "text/javascript",
-				"exec": [
-					""
-				]
-			}
-		},
-		{
-			"listen": "test",
-			"script": {
-				"type": "text/javascript",
-				"exec": [
-					""
-				]
-			}
 		}
 	],
 	"variable": [
@@ -191,7 +287,17 @@
 		},
 		{
 			"key": "verifyToken",
-			"value": "YOUR_WHATSAPP_VERIFY_TOKEN",
+			"value": "tokentest",
+			"type": "string"
+		},
+		{
+			"key": "phoneNumberId",
+			"value": "1234567890",
+			"type": "string"
+		},
+		{
+			"key": "configMongoId",
+			"value": "65ae...",
 			"type": "string"
 		}
 	]

@@ -11,13 +11,13 @@ import { OrdersService } from '../orders/orders.service';
 import { WhatsappService } from '../whatsapp/whatsapp.service';
 import { AgentExecutor, createOpenAIToolsAgent } from 'langchain/agents';
 import { BaseMessage } from '@langchain/core/messages';
+import { WhatsAppConfig } from '../whatsapp/schemas/whatsapp-config.schema';
 
 @Injectable()
 export class AiService implements OnModuleInit {
     private readonly logger = new Logger(AiService.name);
     private model: ChatOpenAI;
     private embeddings: OpenAIEmbeddings;
-    private agentExecutor: AgentExecutor;
 
     constructor(
         private configService: ConfigService,
@@ -37,12 +37,12 @@ export class AiService implements OnModuleInit {
         this.embeddings = new OpenAIEmbeddings({
             openAIApiKey: this.configService.get<string>('OPENAI_API_KEY'),
         });
-
-        await this.initializeAgent();
     }
 
-    private async initializeAgent() {
-        const tools = [
+    private getTools(config: WhatsAppConfig) {
+        const whatsappConfigId = config._id.toString();
+
+        return [
             new DynamicStructuredTool({
                 name: 'consultar_catalogo',
                 description: 'Busca productos en el catálogo de ropa por descripción semántica o palabras clave.',
@@ -50,7 +50,7 @@ export class AiService implements OnModuleInit {
                     query: z.string().describe('La descripción del producto o consulta del cliente'),
                 }),
                 func: async ({ query }) => {
-                    const products = await this.productsService.searchProducts(query);
+                    const products = await this.productsService.searchProducts(query, whatsappConfigId);
                     if (products.length === 0) return 'No encontré productos que coincidan con esa descripción.';
                     return `Productos encontrados:\n${JSON.stringify(products, null, 2)}`;
                 },
@@ -62,10 +62,10 @@ export class AiService implements OnModuleInit {
                     productId: z.string().describe('El ID del producto'),
                 }),
                 func: async ({ productId }) => {
-                    const products = await this.productsService.getAllProducts();
+                    const products = await this.productsService.getAllProducts(whatsappConfigId);
                     const product = products.find(p => (p as any)._id.toString() === productId);
                     if (!product) return 'Producto no encontrado.';
-                    return `Stock disponible para ${product.name}:\n${JSON.stringify(product.stock, null, 2)}`;
+                    return `Stock disponible for ${product.name}:\n${JSON.stringify(product.stock, null, 2)}`;
                 },
             }),
             new DynamicStructuredTool({
@@ -80,7 +80,7 @@ export class AiService implements OnModuleInit {
                     price: z.number().describe('El precio unitario'),
                 }),
                 func: async (input) => {
-                    await this.ordersService.addItemToCart(input.phoneNumber, {
+                    await this.ordersService.addItemToCart(input.phoneNumber, whatsappConfigId, {
                         productId: input.productId,
                         quantity: input.quantity,
                         size: input.size,
@@ -97,7 +97,7 @@ export class AiService implements OnModuleInit {
                     phoneNumber: z.string().describe('El número de teléfono del cliente'),
                 }),
                 func: async ({ phoneNumber }) => {
-                    return await this.ordersService.getCartSummary(phoneNumber);
+                    return await this.ordersService.getCartSummary(phoneNumber, whatsappConfigId);
                 },
             }),
             new DynamicStructuredTool({
@@ -110,7 +110,7 @@ export class AiService implements OnModuleInit {
                     address: z.string().describe('Dirección de entrega'),
                 }),
                 func: async (input) => {
-                    const order = await this.ordersService.createOrder(input.phoneNumber, {
+                    const order = await this.ordersService.createOrder(input.phoneNumber, whatsappConfigId, {
                         customerName: input.customerName,
                         dni: input.dni,
                         address: input.address,
@@ -131,67 +131,58 @@ export class AiService implements OnModuleInit {
             }),
             new DynamicStructuredTool({
                 name: 'enviar_catalogo_bienvenida',
-                description: 'Envía las 10 imágenes del catálogo de bienvenida de "Zimnol Perú". Úsalo solo cuando el cliente salude por primera vez.',
+                description: 'Envía las imágenes del catálogo de bienvenida. Úsalo solo cuando el cliente salude por primera vez.',
                 schema: z.object({
                     phoneNumber: z.string().describe('El número de teléfono del cliente'),
                 }),
                 func: async ({ phoneNumber }) => {
-                    const images = [
-                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z1.jpeg',
-                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z2.jpeg',
-                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z3.jpeg',
-                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z4.jpeg',
-                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z5.jpeg',
-                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z6.jpeg',
-                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z7.jpeg',
-                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z8.jpeg',
-                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z9.jpeg',
-                        'https://ba-bucket-aws.s3.us-east-1.amazonaws.com/z10.jpeg'
-                    ];
+                    const images = config.welcomeImages;
+                    if (!images || images.length === 0) return 'No hay imágenes de catálogo configuradas.';
 
                     // Enviamos las imágenes con un pequeño retraso para asegurar que lleguen después del texto
                     setTimeout(async () => {
                         for (const imageUrl of images) {
                             try {
-                                await this.whatsappService.sendImageMessage(phoneNumber, imageUrl);
+                                await this.whatsappService.sendImageMessage(phoneNumber, imageUrl, config);
                                 // Un pequeño respiro entre imágenes (500ms)
                                 await new Promise(resolve => setTimeout(resolve, 500));
                             } catch (e) {
                                 this.logger.error(`Error sending welcome image ${imageUrl}: ${e.message}`);
                             }
                         }
-                    }, 2500); // 2.5 segundos de espera aproximada
+                    }, 2500);
 
                     return 'Catálogo de imágenes enviado (se enviarán en unos momentos después del saludo).';
                 },
             }),
         ];
-
-        const prompt = ChatPromptTemplate.fromMessages([
-            ['system', '{system_prompt}'],
-            new MessagesPlaceholder('chat_history'),
-            ['human', '{input}'],
-            new MessagesPlaceholder('agent_scratchpad'),
-        ]);
-
-        const agent = await createOpenAIToolsAgent({
-            llm: this.model,
-            tools,
-            prompt,
-        });
-
-        this.agentExecutor = new AgentExecutor({
-            agent,
-            tools,
-            verbose: true,
-        });
     }
 
-    async processMessage(content: string, history: BaseMessage[], flowId: number = 1) {
+    async processMessage(content: string, history: BaseMessage[], config: WhatsAppConfig) {
         try {
-            const systemPrompt = this.getSystemPrompt(flowId);
+            const tools = this.getTools(config);
+            const prompt = ChatPromptTemplate.fromMessages([
+                ['system', '{system_prompt}'],
+                new MessagesPlaceholder('chat_history'),
+                ['human', '{input}'],
+                new MessagesPlaceholder('agent_scratchpad'),
+            ]);
 
-            const response = await this.agentExecutor.invoke({
+            const agent = await createOpenAIToolsAgent({
+                llm: this.model,
+                tools,
+                prompt,
+            });
+
+            const executor = new AgentExecutor({
+                agent,
+                tools,
+                verbose: true,
+            });
+
+            const systemPrompt = config.systemPrompt.replace('{welcome_message}', config.welcomeMessage);
+
+            const response = await executor.invoke({
                 input: content,
                 chat_history: history,
                 system_prompt: systemPrompt,
@@ -200,51 +191,6 @@ export class AiService implements OnModuleInit {
         } catch (error) {
             this.logger.error(`Error in AI process: ${error.message}`);
             return 'Disculpa, tuve un pequeño inconveniente técnico. ¿Podrías repetirme tu consulta?';
-        }
-    }
-
-    private getSystemPrompt(flowId: number): string {
-        switch (flowId) {
-            case 1:
-            default:
-                return `Eres "LUZ", una experta en moda y vendedora estrella de la tienda Zimnol Perú. Tu objetivo es ayudar a las clientas a encontrar la prenda perfecta y cerrar la venta.
-        
-REGLA CRÍTICA PARA EL PRIMER MENSAJE:
-Si el cliente saluda por primera vez (la historia está vacía), DEBES responder EXACTAMENTE con el siguiente texto y usar la herramienta 'enviar_catalogo_bienvenida' inmediatamente:
-
-"Hola buen día  🙂Te saluda LUZ De zimnol peru. 
-Te comento que contamos con promociones especiales en cada modelo de nuestras prendas..
-
-¿Idiqueme  que modelo de prenda le  interesa.?
-
-🌴✨  VESTIDOS PLAYEROS  2026! ✨🌴
-✅ MATERIAL
-▪️  seda premium, suaves y frescos
-▪️ Diseños sublimados en alta resolución, colores que no se despintan
-✅ TALLAS DISPONIBLES
- M – L – XL
-
-UNIDAD=50 soles
-PROMOCIÓN: 2×89
-
-¡Envíos seguros a Lima y provincias!
-
-✨ Aprovecha y asegura el tuyo antes que se agoten."
-
-Reglas de Oro posteriores:
-1. Sé concisa: Evita párrafos largos. Usa viñetas para listas.
-2. Enfocada a Venta: Si una clienta pregunta por algo, busca en el catálogo y ofrece opciones.
-3. Gestión de Carrito:
-   - Si quiere algo, usa 'agregar_al_carrito'.
-   - Si quiere ver qué tiene, usa 'ver_carrito'.
-   - Siempre confirma tallas y colores antes de agregar.
-4. Cierre de Venta:
-   - Cuando la clienta esté lista, usa 'finalizar_pedido'.
-   - IMPORTANTE: Después de 'finalizar_pedido', DEBES usar 'enviar_link_pago' para proporcionar el link de pago y las instrucciones finales. No esperes a que la clienta te lo pida. El link de pago es el paso final indispensable.
-5. Stock: Si preguntan por disponibilidad, usa 'consultar_stock'.
-
-Flujo de Cierre:
-Finalizar Pedido (Recolección de datos) -> Generar Link de Pago -> Despedida amable.`;
         }
     }
 }

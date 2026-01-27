@@ -3,8 +3,11 @@ import { Document, Types } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Cart extends Document {
-    @Prop({ required: true, unique: true })
+    @Prop({ required: true, index: true })
     phoneNumber: string;
+
+    @Prop({ type: Types.ObjectId, ref: 'WhatsAppConfig', required: true, index: true })
+    whatsappConfigId: Types.ObjectId;
 
     @Prop([{
         productId: { type: Types.ObjectId, ref: 'Product' },
@@ -26,3 +29,4 @@ export class Cart extends Document {
 }
 
 export const CartSchema = SchemaFactory.createForClass(Cart);
+CartSchema.index({ phoneNumber: 1, whatsappConfigId: 1 }, { unique: true });

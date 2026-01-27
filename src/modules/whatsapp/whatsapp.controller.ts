@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Body, Query, HttpCode, HttpStatus, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { WhatsappService } from './whatsapp.service';
 import { WhatsAppWebhookDTO } from './dto/whatsapp-webhook.dto';
 import { AiService } from '../ai/ai.service';
 import { OrdersService } from '../orders/orders.service';
 import { UsersService } from '../users/users.service';
+import { WhatsAppConfigService } from './whatsapp-config.service';
 import { HumanMessage, AIMessage } from '@langchain/core/messages';
 
 @Controller('whatsapp')
@@ -13,21 +13,24 @@ export class WhatsappController {
 
     constructor(
         private readonly whatsappService: WhatsappService,
-        private readonly configService: ConfigService,
         private readonly aiService: AiService,
         private readonly ordersService: OrdersService,
         private readonly usersService: UsersService,
+        private readonly configService: WhatsAppConfigService,
     ) { }
 
     @Get('webhook')
-    verifyWebhook(
+    async verifyWebhook(
         @Query('hub.mode') mode: string,
         @Query('hub.verify_token') token: string,
         @Query('hub.challenge') challenge: string,
     ) {
-        const verifyToken = this.configService.get<string>('WHATSAPP_VERIFY_TOKEN');
+        if (mode !== 'subscribe') return 'Verification failed';
 
-        if (mode === 'subscribe' && token === verifyToken) {
+        const configs = await this.configService.findAll();
+        const isValid = configs.some(c => c.verifyToken === token);
+
+        if (isValid) {
             this.logger.log('Webhook verified successfully');
             return challenge;
         }
@@ -45,15 +48,19 @@ export class WhatsappController {
         const changes = entry?.changes?.[0];
         const value = changes?.value;
         const message = value?.messages?.[0];
+        const phoneNumberId = value?.metadata?.phone_number_id;
 
-        if (message && message.type === 'text' && message.text) {
+        if (message && message.type === 'text' && message.text && phoneNumberId) {
             const from = message.from; // phoneNumber
             const text = message.text.body;
             const contactName = value.contacts?.[0]?.profile?.name || 'Usuario';
 
-            this.logger.log(`Message from ${contactName} (${from}): ${text}`);
+            this.logger.log(`Message to ${phoneNumberId} from ${contactName} (${from}): ${text}`);
 
             try {
+                // Fetch WhatsApp Configuration
+                const config = await this.configService.findByPhoneNumberId(phoneNumberId);
+
                 // Check if number is authorized
                 const auth = await this.usersService.getAuthorization(from);
                 if (!auth) {
@@ -62,18 +69,22 @@ export class WhatsappController {
                 }
 
                 // Load history from MongoDB
-                const rawHistory = await this.ordersService.getChatHistory(from);
+                const rawHistory = await this.ordersService.getChatHistory(from, config._id.toString());
                 const history = rawHistory.map(m =>
                     m.type === 'human' ? new HumanMessage(m.content) : new AIMessage(m.content)
                 );
 
-                const aiResponse = await this.aiService.processMessage(`${text} (Usuario: ${from})`, history, auth.flowId);
+                const aiResponse = await this.aiService.processMessage(
+                    `${text} (Usuario: ${from})`,
+                    history,
+                    config,
+                );
 
                 // Save history back to MongoDB
-                await this.ordersService.saveChatHistory(from, 'human', text);
-                await this.ordersService.saveChatHistory(from, 'ai', aiResponse);
+                await this.ordersService.saveChatHistory(from, 'human', text, config._id.toString());
+                await this.ordersService.saveChatHistory(from, 'ai', aiResponse, config._id.toString());
 
-                await this.whatsappService.sendTextMessage(from, aiResponse);
+                await this.whatsappService.sendTextMessage(from, aiResponse, config);
             } catch (error) {
                 this.logger.error(`Failed to handle message from ${from}: ${error.message}`);
             }

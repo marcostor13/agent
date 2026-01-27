@@ -3,8 +3,11 @@ import { Document } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class ChatHistory extends Document {
-    @Prop({ required: true, unique: true })
+    @Prop({ required: true, index: true })
     phoneNumber: string;
+
+    @Prop({ type: 'ObjectId', ref: 'WhatsAppConfig', required: true, index: true })
+    whatsappConfigId: any;
 
     @Prop([{
         role: { type: String, enum: ['human', 'ai'] },
@@ -19,3 +22,4 @@ export class ChatHistory extends Document {
 }
 
 export const ChatHistorySchema = SchemaFactory.createForClass(ChatHistory);
+ChatHistorySchema.index({ phoneNumber: 1, whatsappConfigId: 1 }, { unique: true });

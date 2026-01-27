@@ -3,8 +3,11 @@ import { Document, Types } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Order extends Document {
-    @Prop({ required: true })
+    @Prop({ required: true, index: true })
     phoneNumber: string;
+
+    @Prop({ type: Types.ObjectId, ref: 'WhatsAppConfig', required: true, index: true })
+    whatsappConfigId: Types.ObjectId;
 
     @Prop({ required: true })
     customerName: string;
